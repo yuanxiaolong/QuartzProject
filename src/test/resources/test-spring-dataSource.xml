@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+						http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
+
+
+    <!-- vayne -->
+    <bean id="vayneDataSource" class="org.apache.tomcat.jdbc.pool.DataSource"
+          destroy-method="close">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+        <property name="initialSize" value="5"/>
+        <property name="maxActive" value="100"/>
+        <property name="maxIdle" value="50"/>
+        <property name="password" value="vayne1234"/>
+        <property name="username" value="vayne"/>
+        <property name="url" value="jdbc:mysql://127.0.0.1:3306/vayne?autoReconnect=true" />
+        <!--<property name="url" value="jdbc:mysql://10.100.1.47:3306/test?autoReconnect=true"/>-->
+        <property name="validationQuery" value="select 'vayne' from dual"/>
+        <property name="testOnBorrow" value="true"/>
+        <property name="testOnReturn" value="true"/>
+        <property name="testWhileIdle" value="true"/>
+        <property name="removeAbandoned" value="true"/>
+    </bean>
+
+
+    <!-- vayen sql session factory -->
+    <bean id="vayneSqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="vayneDataSource"/>
+        <property name="configLocation" value="classpath:mybatis/config/mybatis-config.xml"/>
+    </bean>
+
+    <!-- 事务影响的数据源 -->
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="vayneDataSource"/>
+    </bean>
+
+    <!-- DAO -->
+
+
+</beans>

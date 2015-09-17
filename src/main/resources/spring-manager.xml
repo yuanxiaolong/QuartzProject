@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<beans default-autowire="byName"
+       xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans classpath:/org/springframework/beans/factory/xml/spring-beans-3.1.xsd
+                           http://www.springframework.org/schema/context classpath:/org/springframework/context/config/spring-context-3.1.xsd
+        ">
+
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <!-- 这里支持多种寻址方式：classpath和file -->
+                <value>classpath:global.properties</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="scheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean" >
+        <property name="configLocation" value="quartz.properties"></property>
+        <property name="autoStartup" value="true"></property>
+        <property name="overwriteExistingJobs" value="true"></property>
+        <property name="dataSource" ref="quartzDataSource"></property>
+        <property name="startupDelay" value="10"></property>
+        <property name="triggers">
+            <list>
+                <ref local="mailSenderJobTrigger" />
+                <ref local="smsSenderJobTrigger" />
+                <ref local="loadMonitorItemJobTrigger" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="runtimeJobManager" class="com.yxl.demo.quartzProject.biz.manager.quartz.RuntimeJobManager" >
+        <property name="runningJobs">
+            <list>
+                <value>loadMonitorItemJobDetail</value>
+                <value>mailSenderJobDetail</value>
+                <value>smsSenderJobDetail</value>
+            </list>
+        </property>
+    </bean>
+
+    <!-- 配置Cron触发器(CronTriggerFactoryBean) -->
+    <bean id="mailSenderJobTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail">
+            <ref bean="mailSenderJobDetail" />
+        </property>
+        <property name="cronExpression">
+            <!-- 每隔一分钟执行一次 -->
+            <value>0 */1 * * * ?</value>
+        </property>
+    </bean>
+    <bean id="smsSenderJobTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail">
+            <ref bean="smsSenderJobDetail" />
+        </property>
+        <property name="cronExpression">
+            <!-- 每隔一分钟执行一次 -->
+            <value>0 */1 * * * ?</value>
+        </property>
+    </bean>
+    <bean id="loadMonitorItemJobTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+        <property name="jobDetail">
+            <ref bean="loadMonitorItemJobDetail" />
+        </property>
+        <property name="cronExpression">
+            <!-- 每隔一分钟执行一次 -->
+            <value>0 */1 * * * ?</value>
+        </property>
+    </bean>
+
+
+    <!-- 配置方法调用任务工厂(XXXJobDetailFactoryBean) -->
+    <bean id="mailSenderJobDetail" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+        <property name="jobClass" value="com.yxl.demo.quartzProject.biz.manager.quartz.MailSenderJob" />
+        <property name="group" value="${quartz.job.group}" />
+        <property name="durability" value="true" />
+    </bean>
+    <bean id="smsSenderJobDetail" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+        <property name="jobClass" value="com.yxl.demo.quartzProject.biz.manager.quartz.SMSSenderJob" />
+        <property name="group" value="${quartz.job.group}" />
+        <property name="durability" value="true" />
+    </bean>
+    <bean id="loadMonitorItemJobDetail" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+        <property name="jobClass" value="com.yxl.demo.quartzProject.biz.manager.quartz.LoadMonitorItemJob" />
+        <property name="group" value="${quartz.job.group}" />
+        <property name="durability" value="true" />
+    </bean>
+
+    <!-- 配置自定义的时间任务(Job) -->
+    <bean id="abstractSenderJob" abstract="true" />
+    <bean id="mailSenderJob" class="com.yxl.demo.quartzProject.biz.manager.quartz.MailSenderJob" parent="abstractSenderJob" />
+    <bean id="smsSenderJob" class="com.yxl.demo.quartzProject.biz.manager.quartz.SMSSenderJob" parent="abstractSenderJob" />
+
+    <bean id="loadMonitorItemJob" class="com.yxl.demo.quartzProject.biz.manager.quartz.LoadMonitorItemJob" />
+
+    <!-- manger start -->
+
+    <!-- manger end -->
+
+
+    <!-- mail start -->
+    <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+        <property name="host" value="${mail.host}"/>
+        <property name="port" value="${mail.port}"/>
+        <property name="username" value="${mail.username}"/>
+        <property name="password" value="${mail.password}"/>
+        <property name="defaultEncoding" value="UTF-8"></property>
+        <property name="javaMailProperties">
+            <props>
+                <prop key="mail.smtp.auth">${mail.smtp.auth}</prop>
+                <prop key="mail.smtp.from">${mail.default.from}</prop>
+                <prop key="mail.smtp.timeout">${mail.smtp.timeout}</prop>
+                <prop key="mail.debug">${mail.debug}</prop>
+                <!--
+                <prop key="mail.smtp.starttls.enable">true</prop>
+                <prop key="mail.smtp.socketFactory.class">javax.net.ssl.SSLSocketFactory</prop>
+                <prop key="mail.smtp.socketFactory.fallback">false</prop>
+                -->
+            </props>
+        </property>
+    </bean>
+    <bean id="simpleMailMessage" class="org.springframework.mail.SimpleMailMessage" >
+        <property name="from">
+            <value>${mail.default.from}</value>
+        </property>
+    </bean>
+    <bean id="velocityEngine" class="org.apache.velocity.app.VelocityEngine">
+
+    </bean>
+    <bean id="mailSenderManager" class="com.yxl.demo.quartzProject.biz.manager.MailSenderManagerImpl">
+        <property name="mailSender" ref="mailSender" />
+        <property name="simpleMailMessage" ref="simpleMailMessage" />
+    </bean>
+    <!-- mail end -->
+
+    <!-- sms start -->
+    <bean id="smsSenderManager" class="com.yxl.demo.quartzProject.biz.manager.SMSSenderManagerImpl" />
+
+
+    <!-- redis start -->
+    <bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+        <property name="maxTotal" value="50" />
+        <property name="maxIdle" value="10" />
+        <property name="maxWaitMillis" value="1000" />
+        <property name="testOnBorrow" value="true" />
+    </bean>
+    <bean id="jedis.shardInfo" class="redis.clients.jedis.JedisShardInfo">
+        <constructor-arg index="0" value="${redis.host}" />
+        <constructor-arg index="1" value="${redis.port}" />
+    </bean>
+    <bean id="shardedJedisPool" class="redis.clients.jedis.ShardedJedisPool">
+        <constructor-arg index="0" ref="jedisPoolConfig" />
+        <constructor-arg index="1">
+            <list>
+                <ref bean="jedis.shardInfo" />
+            </list>
+        </constructor-arg>
+    </bean>
+    <!-- redis end -->
+
+</beans>

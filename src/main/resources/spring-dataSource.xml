@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans classpath:/org/springframework/beans/factory/xml/spring-beans-3.1.xsd
+                            http://www.springframework.org/schema/tool classpath:/org/springframework/beans/factory/xml/spring-tool-3.1.xsd
+                            http://www.springframework.org/schema/context classpath:/org/springframework/context/config/spring-context-3.1.xsd">
+    <!-- vayne -->
+    <bean id="vayneDataSource" class="org.apache.tomcat.jdbc.pool.DataSource"
+          destroy-method="close">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver" />
+        <property name="initialSize" value="10" />
+        <property name="maxActive" value="1000" />
+        <property name="maxIdle" value="50" />
+        <property name="password" value="${db.vayne.password}" />
+        <property name="username" value="${db.vayne.username}" />
+        <property name="url" value="${db.vayne.url}" />
+        <property name="validationQuery" value="select 'vayne' from dual" />
+        <property name="testOnBorrow" value="true" />
+        <property name="testOnReturn" value="true" />
+        <property name="testWhileIdle" value="true" />
+        <property name="removeAbandoned" value="true" />
+    </bean>
+
+    <bean id="quartzDataSource" class="org.apache.tomcat.jdbc.pool.DataSource" >
+        <property name="driverClassName" value="com.mysql.jdbc.Driver" />
+        <property name="initialSize" value="10" />
+        <property name="maxActive" value="1000" />
+        <property name="maxIdle" value="50" />
+        <property name="password" value="${db.quartz.password}" />
+        <property name="username" value="${db.quartz.username}" />
+        <property name="url" value="${db.quartz.url}" />
+        <property name="validationQuery" value="select 'vayne' from dual" />
+        <property name="testOnBorrow" value="true" />
+        <property name="testOnReturn" value="true" />
+        <property name="testWhileIdle" value="true" />
+        <property name="removeAbandoned" value="true" />
+    </bean>
+
+
+    <!-- vayne sql session factory -->
+    <bean id="vayneSqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="vayneDataSource" />
+        <property name="configLocation" value="classpath:mybatis/config/mybatis-config.xml"/>
+    </bean>
+
+    <bean id="demoDAO" class="org.mybatis.spring.mapper.MapperFactoryBean">
+        <property name="sqlSessionFactory" ref="vayneSqlSessionFactory" />
+        <property name="mapperInterface" value="com.yxl.demo.quartzProject.dao.DemoDAO" />
+    </bean>
+
+    <bean id="redisDAO" class="com.yxl.demo.quartzProject.dao.redis.RedisDAO"/>
+</beans>
